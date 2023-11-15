@@ -1,4 +1,4 @@
-package com.kerimovikh.customer;
+package com.kerimovikh.clients.fraud;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
