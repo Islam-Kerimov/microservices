@@ -1,5 +1,6 @@
 package com.kerimovikh.customer;
 
+import com.kerimovikh.amqp.RabbitMQMessageProducer;
 import com.kerimovikh.clients.fraud.FraudCheckResponse;
 import com.kerimovikh.clients.fraud.FraudClient;
 import com.kerimovikh.clients.notification.NotificationClient;
@@ -14,7 +15,7 @@ import static java.lang.String.format;
 public class CustomerService {
     private final CustomerRepository customerRepository;
     private final FraudClient fraudClient;
-    private final NotificationClient notificationClient;
+    private final RabbitMQMessageProducer rabbitMQMessageProducer;
 
     public void registrationCustomer(CustomerRegistrationRequest request) {
         Customer customer = Customer.builder()
@@ -31,11 +32,14 @@ public class CustomerService {
             throw new IllegalStateException("fraudster");
         }
 
-        notificationClient.sendNotification(
-            new NotificationRequest(
-                customer.getId(),
-                customer.getEmail(),
-                format("Hi %s, welcome to Kerimovikh...", customer.getFirstName()))
-        );
+        NotificationRequest notificationRequest = new NotificationRequest(
+            customer.getId(),
+            customer.getEmail(),
+            format("Hi %s, welcome to Kerimovikh...", customer.getFirstName()));
+
+        rabbitMQMessageProducer.publish(
+            notificationRequest,
+            "internal.exchange",
+            "internal.notification.routing-key");
     }
 }
